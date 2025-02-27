@@ -7,9 +7,6 @@
 
 样例：上传Excel文档数据
 ![image](https://github.com/user-attachments/assets/c610650c-252c-4e52-b7bd-bc3955d85d14)
-返回：
-![Uploading 0c6efaf8-4b3b-42af-b03b-1ba842abc5df.jpeg…]()
-
 
 
 - 项目结构已经完整，包含了所有必要的源代码文件和配置文件
