@@ -181,7 +181,26 @@ function getPreviousValue(data: HospitalData[], currentRecord: HospitalData, ind
   return 0;
 }
 
-async function callDeepSeekAPI(data: any[]) {
+interface DeepSeekResponse {
+  choices: Array<{
+    message?: {
+      content: string;
+    };
+  }>;
+}
+
+interface DeepSeekAnomaly {
+  hospitalName?: string;
+  hospital?: string;
+  date?: string;
+  indicator?: string;
+  field?: string;
+  value?: number;
+  description?: string;
+  message?: string;
+}
+
+async function callDeepSeekAPI(data: HospitalData[]): Promise<AnomalyResult[]> {
   if (!DEEPSEEK_CONFIG.apiKey) {
     console.log('未配置DeepSeek API密钥，跳过深度学习分析');
     return [];
@@ -192,28 +211,39 @@ async function callDeepSeekAPI(data: any[]) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await axios.post('/api/deepseek/chat/completions', {
+      console.log('正在发送请求到后端服务器...');
+      const requestData = {
         model: 'deepseek-r1-250120',
         messages: [
-            //你是一个专业的医疗数据分析助手，负责分析医院数据中的异常情况。请以JSON数组格式返回异常数据，每个异常包含type、hospital、date、indicator、value、message等字段。
           {role: 'system', content: DEEPSEEK_CONFIG.systemPrompt},
           {role: 'user', content: `请分析以下医疗数据中的异常情况：${JSON.stringify(data)}`}
         ]
-      }, {
+      };
+      
+      const apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+      console.log('请求配置:', {
+        url: apiUrl,
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey.substring(0, 8)}...`,
+          'Content-Type': 'application/json'
+        },
+        timeout
+      });
+
+      const response = await axios.post<DeepSeekResponse>(apiUrl, requestData, {
         headers: {
           'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: timeout
+        timeout
       });
 
-      // 验证API响应数据结构
       if (!response.data || typeof response.data !== 'object') {
         throw new Error('API响应格式无效');
       }
 
       // 尝试从响应中提取异常数据
-      let anomalies = [];
+      let anomalies: DeepSeekAnomaly[] = [];
       if (response.data.choices && Array.isArray(response.data.choices) && response.data.choices.length > 0) {
         const content = response.data.choices[0].message?.content;
         if (content) {
@@ -235,11 +265,11 @@ async function callDeepSeekAPI(data: any[]) {
         }
       }
 
-      return anomalies.map((anomaly: any) => ({
+      return anomalies.map((anomaly) => ({
         type: '深度学习检测',
         hospital: anomaly.hospitalName || anomaly.hospital || '未知医院',
         date: anomaly.date || '未知日期',
-        indicator: anomaly.indicator || anomaly.field || undefined,
+        indicator: anomaly.indicator || anomaly.field,
         value: typeof anomaly.value === 'number' ? anomaly.value : undefined,
         message: anomaly.description || anomaly.message || '检测到异常'
       }));
