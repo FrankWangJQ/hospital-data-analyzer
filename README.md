@@ -2,6 +2,13 @@
 针对连续数据进行异常检测分析，可以分析出数据超过设置边界波动阈值的数据，另外接入deepseek，通过修改apikey和提示词来支持不同行业特性的数据进行检测分析。
 医疗数据简单分析提示词案例：你是一个专业的医疗数据分析助手，负责分析医院数据中的异常情况。请以JSON数组格式返回异常数据，每个异常包含type、hospital、date、indicator、value、message等字段。
 
+样例：上传Excel文档数据
+![image](https://github.com/user-attachments/assets/c610650c-252c-4e52-b7bd-bc3955d85d14)
+返回：
+![Uploading 0c6efaf8-4b3b-42af-b03b-1ba842abc5df.jpeg…]()
+
+
+
 - 项目结构已经完整，包含了所有必要的源代码文件和配置文件
 - 主要功能文件包括：
   - App.tsx：主应用程序组件
