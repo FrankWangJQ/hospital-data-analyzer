@@ -207,35 +207,37 @@ async function callDeepSeekAPI(data: HospitalData[]): Promise<AnomalyResult[]> {
   }
 
   const maxRetries = 3;
-  const timeout = 100000; // 10秒超时
+  const timeout = 30000; // 30秒超时
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      if (attempt > 1) {
+        console.log(`第 ${attempt} 次重试...`);
+      }
       console.log('正在发送请求到后端服务器...');
       const requestData = {
         model: 'deepseek-r1-250120',
         messages: [
-          {role: 'system', content: DEEPSEEK_CONFIG.systemPrompt},
-          {role: 'user', content: `请分析以下医疗数据中的异常情况：${JSON.stringify(data)}`}
+          {
+            role: 'system',
+            content: DEEPSEEK_CONFIG.systemPrompt
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(data)
+          }
         ]
       };
       
-      const apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
-      console.log('请求配置:', {
-        url: apiUrl,
-        headers: {
-          'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey.substring(0, 8)}...`,
-          'Content-Type': 'application/json'
-        },
-        timeout
-      });
+      const apiUrl = 'http://localhost:3001/api/deepseek';
+      console.log('正在发送分析请求...');
 
       const response = await axios.post<DeepSeekResponse>(apiUrl, requestData, {
+        timeout,
         headers: {
-          'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey}`
+        }
       });
 
       if (!response.data || typeof response.data !== 'object') {
